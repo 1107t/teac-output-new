@@ -52,6 +52,11 @@ Rails.application.routes.draw do
         resources :posts,     only: [:index, :show, :create, :update, :destroy]
         resources :learnings, only: [:index, :create]
       end
+
+      # --- マネージャー向けリソース ---
+      namespace :manager do
+        resources :tenants, only: [:index, :create, :show]
+      end
     end
   end
   # ===========================================================
