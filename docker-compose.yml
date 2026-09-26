@@ -22,6 +22,7 @@ services:
       - db
       - webpacker
     env_file:
+      - .env
       - dev.env
     environment:
       WEBPACKER_DEV_SERVER_HOST: webpacker

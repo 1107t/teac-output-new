@@ -3,12 +3,20 @@
 class Article < ApplicationRecord
   mount_uploader :image, ImageUploader # ようせい追加（画像保存）
   after_create :assign_to_default_folder
-  
+  before_validation :set_tenant_from_owner, on: :create
+
   validates :user_id, presence: true, if: -> { admin_id.blank? }
   validates :admin_id, presence: true, if: -> { user_id.blank? }
 
   belongs_to :admin, optional: true
   belongs_to :user, optional: true
+  belongs_to :tenant
+
+  # リクエスト中に current_tenant が判明していれば、そのテナントの行だけを見せる。
+  # 未設定（コンソール/マイグレーション等）の場合は絞り込まない。
+  scope :in_current_tenant, -> { Current.tenant ? where(tenant: Current.tenant) : all }
+  default_scope { in_current_tenant }
+
   has_many :article_comments, dependent: :destroy
   has_many :likes, dependent: :destroy
   has_many :stocks, dependent: :destroy
@@ -74,6 +82,10 @@ class Article < ApplicationRecord
       if uncategorized_folder
         ArticleFolder.create!(article_id: self.id, folder_id: uncategorized_folder.id)
       end
+    end
+
+    def set_tenant_from_owner
+      self.tenant ||= user&.tenant || admin&.tenant
     end
 end
 

@@ -8,6 +8,9 @@ Capybara.register_driver :selenium_chrome do |app|
   options.add_argument('--no-sandbox')
   options.add_argument('--disable-gpu')
   options.add_argument('--window-size=1400,1400')
+  options.binary = '/usr/bin/chromium'
 
-  Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+  service = Selenium::WebDriver::Service.chrome(path: '/usr/bin/chromedriver')
+
+  Capybara::Selenium::Driver.new(app, browser: :chrome, options: options, service: service)
 end

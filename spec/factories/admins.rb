@@ -6,5 +6,7 @@ FactoryBot.define do
     name { '管理者' }
     password { 'password' }
     password_confirmation { 'password' }
+    tenant
+    proaka
   end
 end

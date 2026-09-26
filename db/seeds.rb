@@ -8,11 +8,22 @@
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
 
+35.times do |n|
+  Tenant.create!(name: "テナント#{n+1}")
+end
+
+puts "Tenants Created"
+
+default_tenant = Tenant.find_by!(name: 'テナント1')
+default_proaka = Proaka.find_or_create_by!(name: 'プロアカ1')
+
 30.times do |i|
   user = User.new(
     email:    "test_user#{i}@gmail.com", # sample: test_user1@gmail.com
     name:     "テストuser#{i}",
-    password: 'password'
+    password: 'password',
+    tenant:   default_tenant,
+    proaka:   default_proaka
   )
 
   user.skip_confirmation! # deviseの確認メールをスキップ
@@ -26,7 +37,9 @@ emails = %i[ikezawa@test.com sugawara@test.com yosei@test.com motonaga@test.com 
   user = User.new(
     name:     names[i],
     email:    emails[i],
-    password: 'password'
+    password: 'password',
+    tenant:   default_tenant,
+    proaka:   default_proaka
   )
 
   user.skip_confirmation! # deviseの確認メールをスキップ
@@ -56,7 +69,9 @@ manager.save!
 admin = Admin.new(
   email:    'test_admin@gmail.com',
   name:     'テストadmin1',
-  password: 'password'
+  password: 'password',
+  tenant:   default_tenant,
+  proaka:   default_proaka
 )
 
 admin.skip_confirmation! # deviseの確認メールをスキップ
@@ -107,12 +122,6 @@ Post.create!(title: 'payjpを用いての決済機能について解説',
 )
 
 puts "Posts Created"
-
-35.times do |n|
-  Tenant.create!(name: "テナント#{n+1}")
-end
-
-puts "Tenants Created"
 
 Profile.create!(birthday: '1990-03-30',
   gender: 'male',

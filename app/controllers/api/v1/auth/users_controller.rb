@@ -4,6 +4,7 @@ class Api::V1::Auth::UsersController < Api::V1::BaseController
   # POST /api/v1/auth/signup
   def signup
     user = User.new(signup_params)
+    user.proaka ||= Proaka.order(:id).first
     # Devise の confirmable をスキップして即有効化
     user.skip_confirmation!
 
@@ -24,7 +25,7 @@ class Api::V1::Auth::UsersController < Api::V1::BaseController
 
   # POST /api/v1/auth/login
   def login
-    user = User.find_by(email: params[:email]&.downcase)
+    user = User.find_by(email: params[:email]&.downcase, tenant_id: params[:tenant_id])
     if user&.valid_password?(params[:password])
       token = JwtHelper.encode(id: user.id, role: 'user')
       render json: { token: token, user: user_json(user) }
@@ -46,6 +47,6 @@ class Api::V1::Auth::UsersController < Api::V1::BaseController
   private
 
   def signup_params
-    params.permit(:name, :email, :password, :password_confirmation, :gender)
+    params.permit(:name, :email, :password, :password_confirmation, :gender, :tenant_id)
   end
 end

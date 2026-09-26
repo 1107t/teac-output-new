@@ -6,6 +6,8 @@ FactoryBot.define do
     email { Faker::Internet.email }
     password { 'password' }
     uid { Faker::Alphanumeric.alphanumeric(number: 10) }
+    tenant
+    proaka
 
     trait :a do
       id { 2 }

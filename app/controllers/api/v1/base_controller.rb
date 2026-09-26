@@ -18,6 +18,19 @@ class Api::V1::BaseController < ActionController::API
     @current_manager = Manager.find_by(id: id) if role == 'manager'
 
     render_unauthorized unless @current_user || @current_admin || @current_manager
+
+    # 以降このリクエスト内で行われる User/Admin へのクエリは、
+    # 自動的に自分のテナントの範囲内に絞り込まれる（他テナントのデータには
+    # アプリケーションレベルで一切アクセスできない）。managerはテナントに
+    # 紐付かないため current_tenant は nil のままとなり、絞り込みは行われない。
+    Current.tenant = current_tenant
+  end
+
+  # ログイン中のuser/adminが所属するテナントをRails側で判定する。
+  # URLやリクエストパラメータのtenant_idを信用せず、認証済みレコード自身の
+  # tenant_id を正とすることで、どのテナントからのリクエストかを特定する。
+  def current_tenant
+    @current_user&.tenant || @current_admin&.tenant
   end
 
   def authenticate_user!
@@ -69,6 +82,7 @@ class Api::V1::BaseController < ActionController::API
       email: user.email,
       birthday: profile&.birthday&.strftime('%Y-%m-%d'),
       gender: user.gender,
+      tenantId: user.tenant_id.to_s,
       createdAt: user.created_at.iso8601
     }
   end
@@ -78,6 +92,7 @@ class Api::V1::BaseController < ActionController::API
       id: admin.id.to_s,
       name: admin.name,
       email: admin.email,
+      tenantId: admin.tenant_id.to_s,
       createdAt: admin.created_at.iso8601
     }
   end

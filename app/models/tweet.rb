@@ -1,8 +1,16 @@
 class Tweet < ApplicationRecord
+  before_validation :set_tenant_from_user, on: :create
+
   belongs_to :user
-  has_many :tweet_comments, dependent: :destroy
+  belongs_to :tenant
+  has_many :tweet_comments, dependent: :destroy # この行を追加
   has_many :likes, dependent: :destroy
   has_many_attached :images
+
+  # リクエスト中に current_tenant が判明していれば、そのテナントの行だけを見せる。
+  # 未設定（コンソール/マイグレーション等）の場合は絞り込まない。
+  scope :in_current_tenant, -> { Current.tenant ? where(tenant: Current.tenant) : all }
+  default_scope { in_current_tenant }
 
   validates :post, presence: true, length: { maximum: 255 }
   validate :image_count_validation, :image_size_varidation, :image_type_validation
@@ -50,6 +58,10 @@ class Tweet < ApplicationRecord
   end
 
   private
+
+  def set_tenant_from_user
+    self.tenant ||= user&.tenant
+  end
 
   def image_count_validation
     if images.count > 4
