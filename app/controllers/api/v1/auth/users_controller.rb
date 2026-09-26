@@ -16,7 +16,7 @@ class Api::V1::Auth::UsersController < Api::V1::BaseController
           hobby: ''
         )
       end
-      token = JwtHelper.encode(id: user.id, role: 'user')
+      token = JwtHelper.encode(id: user.id, role: 'user', tenant_id: user.tenant_id)
       render json: { token: token, user: user_json(user) }, status: :created
     else
       render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
@@ -27,7 +27,7 @@ class Api::V1::Auth::UsersController < Api::V1::BaseController
   def login
     user = User.find_by(email: params[:email]&.downcase, tenant_id: params[:tenant_id])
     if user&.valid_password?(params[:password])
-      token = JwtHelper.encode(id: user.id, role: 'user')
+      token = JwtHelper.encode(id: user.id, role: 'user', tenant_id: user.tenant_id)
       render json: { token: token, user: user_json(user) }
     else
       render json: { error: 'メールアドレスまたはパスワードが違います' }, status: :unauthorized

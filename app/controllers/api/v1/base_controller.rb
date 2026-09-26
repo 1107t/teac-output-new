@@ -17,7 +17,8 @@ class Api::V1::BaseController < ActionController::API
     @current_admin   = Admin.find_by(id: id)   if role == 'admin'
     @current_manager = Manager.find_by(id: id) if role == 'manager'
 
-    render_unauthorized unless @current_user || @current_admin || @current_manager
+    authenticated = @current_user || @current_admin || @current_manager
+    return render_unauthorized unless authenticated && token_tenant_matches?(authenticated, payload)
 
     # 以降このリクエスト内で行われる User/Admin へのクエリは、
     # 自動的に自分のテナントの範囲内に絞り込まれる（他テナントのデータには
@@ -41,7 +42,7 @@ class Api::V1::BaseController < ActionController::API
     return render_unauthorized unless payload && payload['role'] == 'user'
 
     @current_user = User.find_by(id: payload['id'])
-    render_unauthorized unless @current_user
+    render_unauthorized unless @current_user && token_tenant_matches?(@current_user, payload)
   end
 
   def authenticate_admin!
@@ -52,7 +53,7 @@ class Api::V1::BaseController < ActionController::API
     return render_unauthorized unless payload && payload['role'] == 'admin'
 
     @current_admin = Admin.find_by(id: payload['id'])
-    render_unauthorized unless @current_admin
+    render_unauthorized unless @current_admin && token_tenant_matches?(@current_admin, payload)
   end
 
   def authenticate_manager!
@@ -64,6 +65,15 @@ class Api::V1::BaseController < ActionController::API
 
     @current_manager = Manager.find_by(id: payload['id'])
     render_unauthorized unless @current_manager
+  end
+
+  # user/admin のトークンには発行時の tenant_id が入っている。所属テナントが
+  # 変わった後や tenant_id を持たない古いトークンは無効として扱う。
+  # manager はテナントに紐付かないため確認しない。
+  def token_tenant_matches?(record, payload)
+    return true if record.is_a?(Manager)
+
+    payload['tenant_id'].present? && payload['tenant_id'].to_s == record.tenant_id.to_s
   end
 
   def render_unauthorized

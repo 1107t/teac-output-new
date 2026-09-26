@@ -10,11 +10,18 @@ RSpec.describe 'Api::V1::Admin::Users', type: :request do
   let!(:user_b)  { create(:user, tenant: tenant_b) }
 
   def auth_headers_for(admin)
-    token = JwtHelper.encode(id: admin.id, role: 'admin')
+    token = JwtHelper.encode(id: admin.id, role: 'admin', tenant_id: admin.tenant_id)
     { 'Authorization' => "Bearer #{token}" }
   end
 
   describe 'GET /api/v1/admin/users' do
+    it 'トークンの tenant_id が管理者の所属テナントと異なる場合は 401 を返す' do
+      token = JwtHelper.encode(id: admin_a.id, role: 'admin', tenant_id: tenant_b.id)
+      get '/api/v1/admin/users', headers: { 'Authorization' => "Bearer #{token}" }
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
     it '自分のテナントのユーザーのみが一覧に含まれる' do
       get '/api/v1/admin/users', headers: auth_headers_for(admin_a)
 

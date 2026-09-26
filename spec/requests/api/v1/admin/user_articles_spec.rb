@@ -6,12 +6,12 @@ require 'rails_helper'
 RSpec.describe 'Api::V1::Admin::UserArticles', type: :request do
   # 管理者トークンを Authorization ヘッダー形式で組み立てるヘルパー
   def admin_auth_headers(admin)
-    { 'Authorization' => "Bearer #{JwtHelper.encode(id: admin.id, role: 'admin')}" }
+    { 'Authorization' => "Bearer #{JwtHelper.encode(id: admin.id, role: 'admin', tenant_id: admin.tenant_id)}" }
   end
 
   # ユーザートークン（admin ロール以外）を組み立てるヘルパー。認可エラー検証に使う
   def user_auth_headers(user)
-    { 'Authorization' => "Bearer #{JwtHelper.encode(id: user.id, role: 'user')}" }
+    { 'Authorization' => "Bearer #{JwtHelper.encode(id: user.id, role: 'user', tenant_id: user.tenant_id)}" }
   end
 
   let(:admin) { create(:admin) }

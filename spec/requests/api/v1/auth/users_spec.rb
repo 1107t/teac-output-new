@@ -21,6 +21,13 @@ RSpec.describe 'Api::V1::Auth::Users', type: :request do
         expect(body['token']).to be_present
         expect(body['user']['email']).to eq(user.email)
       end
+
+      it 'トークンに所属テナントの tenant_id が含まれる' do
+        post '/api/v1/auth/login', params: { email: user.email, password: 'password', tenant_id: tenant_a.id }
+
+        payload = JwtHelper.decode(JSON.parse(response.body)['token'])
+        expect(payload['tenant_id']).to eq(tenant_a.id)
+      end
     end
 
     context '別テナントのIDでログインした場合' do
@@ -65,6 +72,19 @@ RSpec.describe 'Api::V1::Auth::Users', type: :request do
         expect(response).to have_http_status(:created)
         expect(User.last.tenant_id).to eq(tenant_a.id)
       end
+
+      it 'トークンに所属テナントの tenant_id が含まれる' do
+        post '/api/v1/auth/signup', params: {
+          name: 'テスト太郎',
+          email: 'newuser@example.com',
+          password: 'password',
+          password_confirmation: 'password',
+          tenant_id: tenant_a.id
+        }
+
+        payload = JwtHelper.decode(JSON.parse(response.body)['token'])
+        expect(payload['tenant_id']).to eq(tenant_a.id)
+      end
     end
 
     context 'tenant_id を指定しない場合' do
@@ -104,7 +124,7 @@ RSpec.describe 'Api::V1::Auth::Users', type: :request do
     let!(:user_b) { create(:user, tenant: tenant_b) }
 
     def token_for(user)
-      JwtHelper.encode(id: user.id, role: 'user')
+      JwtHelper.encode(id: user.id, role: 'user', tenant_id: user.tenant_id)
     end
 
     it 'リクエストパラメータではなく、認証済みユーザー自身の tenant_id を返す' do
@@ -118,6 +138,38 @@ RSpec.describe 'Api::V1::Auth::Users', type: :request do
       get '/api/v1/auth/me', headers: { 'Authorization' => "Bearer #{token_for(user_b)}" }
 
       expect(JSON.parse(response.body)['user']['tenantId']).to eq(tenant_b.id.to_s)
+    end
+
+    it 'トークンの tenant_id がユーザーの所属テナントと異なる場合は 401 を返す' do
+      token = JwtHelper.encode(id: user_a.id, role: 'user', tenant_id: tenant_b.id)
+      get '/api/v1/auth/me', headers: { 'Authorization' => "Bearer #{token}" }
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it 'トークンに tenant_id が含まれない場合は 401 を返す' do
+      token = JwtHelper.encode(id: user_a.id, role: 'user')
+      get '/api/v1/auth/me', headers: { 'Authorization' => "Bearer #{token}" }
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
+  describe 'authenticate_user! を使うAPI（GET /api/v1/posts）' do
+    let!(:user_a) { create(:user, tenant: tenant_a) }
+
+    it 'トークンの tenant_id が一致する場合は 200 を返す' do
+      token = JwtHelper.encode(id: user_a.id, role: 'user', tenant_id: tenant_a.id)
+      get '/api/v1/posts', headers: { 'Authorization' => "Bearer #{token}" }
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it 'トークンの tenant_id が異なる場合は 401 を返す' do
+      token = JwtHelper.encode(id: user_a.id, role: 'user', tenant_id: tenant_b.id)
+      get '/api/v1/posts', headers: { 'Authorization' => "Bearer #{token}" }
+
+      expect(response).to have_http_status(:unauthorized)
     end
   end
 end
