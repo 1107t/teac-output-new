@@ -14,13 +14,19 @@ class Api::V1::Manager::TenantsController < Api::V1::BaseController
   end
 
   # POST /api/v1/manager/tenants
+  # テナントと、そのテナントの最初の管理者を同時に作成する。どちらかが不正なら両方とも作成しない。
   def create
     tenant = Tenant.new(tenant_params)
-    if tenant.save
-      render json: { tenant: tenant_json(tenant) }, status: :created
-    else
-      render json: { errors: tenant.errors.full_messages }, status: :unprocessable_entity
+    admin = build_tenant_admin(tenant)
+
+    errors = validation_errors(tenant, admin)
+    return render json: { errors: errors }, status: :unprocessable_entity if errors.any?
+
+    ActiveRecord::Base.transaction do
+      tenant.save!
+      admin.save!
     end
+    render json: { tenant: tenant_json(tenant), admin: admin_json(admin) }, status: :created
   end
 
   private
@@ -32,6 +38,28 @@ class Api::V1::Manager::TenantsController < Api::V1::BaseController
 
   def tenant_params
     params.permit(:name)
+  end
+
+  def build_tenant_admin(tenant)
+    admin = Admin.new(
+      name: params[:admin_name],
+      email: params[:admin_email],
+      password: params[:admin_password],
+      password_confirmation: params[:admin_password_confirmation],
+      tenant: tenant,
+      proaka: Proaka.order(:id).first
+    )
+    # マネージャーが作成するアカウントのため、確認メールをスキップして即有効化
+    admin.skip_confirmation!
+    admin
+  end
+
+  # Admin モデルは name を必須にしていないため、テナント作成時のみここで必須にする
+  def validation_errors(tenant, admin)
+    tenant.valid?
+    admin.valid?
+    admin.errors.add(:name, :blank) if admin.name.blank?
+    tenant.errors.full_messages + admin.errors.full_messages
   end
 
   def tenant_json(tenant)
