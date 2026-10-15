@@ -1,6 +1,15 @@
 class Post < ApplicationRecord
+  before_validation :set_tenant_from_owner, on: :create
+
   belongs_to :admin, optional: true
   belongs_to :user, optional: true
+  belongs_to :tenant
+
+  # リクエスト中に current_tenant が判明していれば、そのテナントの行だけを見せる。
+  # 未設定（コンソール/マイグレーション等）の場合は絞り込まない。
+  scope :in_current_tenant, -> { Current.tenant ? where(tenant: Current.tenant) : all }
+  default_scope { in_current_tenant }
+
   has_many :likes
   has_many :post_comments, dependent: :destroy
 
@@ -40,5 +49,11 @@ class Post < ApplicationRecord
       .where('users.name LIKE :author OR admins.name LIKE :author', author: "%#{filter[:author]}%")
       .order("posts.created_at #{filter[:order]}")
       .presence || Post.none
-  end 
+  end
+
+  private
+
+    def set_tenant_from_owner
+      self.tenant ||= user&.tenant || admin&.tenant
+    end
 end

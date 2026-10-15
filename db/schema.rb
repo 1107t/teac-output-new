@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_09_09_121500) do
+ActiveRecord::Schema.define(version: 2026_10_15_000000) do
 
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
@@ -235,7 +235,9 @@ ActiveRecord::Schema.define(version: 2026_09_09_121500) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.bigint "admin_id"
+    t.bigint "tenant_id", null: false
     t.index ["admin_id"], name: "index_posts_on_admin_id"
+    t.index ["tenant_id"], name: "index_posts_on_tenant_id"
     t.index ["user_id"], name: "index_posts_on_user_id"
   end
 
@@ -366,6 +368,7 @@ ActiveRecord::Schema.define(version: 2026_09_09_121500) do
   add_foreign_key "post_comments", "posts"
   add_foreign_key "post_comments", "users"
   add_foreign_key "posts", "admins"
+  add_foreign_key "posts", "tenants"
   add_foreign_key "posts", "users"
   add_foreign_key "profiles", "users"
   add_foreign_key "stocks", "articles"
