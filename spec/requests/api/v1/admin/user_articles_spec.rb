@@ -1,4 +1,4 @@
-# spec/requests/api/v1/admin/user_articles_spec.rb【新規作成】
+# spec/requests/api/v1/admin/user_articles_spec.rb
 # 管理者が特定の受講生の記事一覧を閲覧するエンドポイントの request spec。
 # GET /api/v1/admin/users/:user_id/articles の正常系・認証・認可・存在しないユーザーを検証する。
 require 'rails_helper'

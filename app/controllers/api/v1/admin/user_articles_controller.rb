@@ -1,4 +1,4 @@
-# app/controllers/api/v1/admin/user_articles_controller.rb【新規作成】
+# app/controllers/api/v1/admin/user_articles_controller.rb
 # 管理者が特定の受講生の記事一覧を閲覧するAPIコントローラー（読み取り専用）。
 # 既存の Api::V1::Admin::TweetsController（つぶやき閲覧）と同じ構造で、user_id 配下にネストされる。
 class Api::V1::Admin::UserArticlesController < Api::V1::BaseController

@@ -1,4 +1,4 @@
-# app/controllers/api/v1/admin/tweets_controller.rb【新規作成】
+# app/controllers/api/v1/admin/tweets_controller.rb
 # 管理者がユーザーのつぶやきを閲覧するAPIコントローラー（読み取り専用）。
 # 管理者は user_id を持たないため、いいね・コメント投稿は提供しない。
 class Api::V1::Admin::TweetsController < Api::V1::BaseController

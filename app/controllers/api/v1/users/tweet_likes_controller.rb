@@ -1,4 +1,4 @@
-# app/controllers/api/v1/users/tweet_likes_controller.rb【新規作成】
+# app/controllers/api/v1/users/tweet_likes_controller.rb
 # ユーザーがつぶやきにいいねする/解除するAPIコントローラー。
 # likes テーブルの tweet_id カラムを使用する。二重いいねは Like モデルのバリデーションで防ぐ。
 class Api::V1::Users::TweetLikesController < Api::V1::BaseController

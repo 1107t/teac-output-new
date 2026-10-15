@@ -1,4 +1,4 @@
-# app/controllers/api/v1/users/tweet_comments_controller.rb【新規作成】
+# app/controllers/api/v1/users/tweet_comments_controller.rb
 # ユーザーがつぶやきにコメントを投稿するAPIコントローラー。
 # tweet_comments テーブルの recipient_id には投稿先のツイート所有者IDをセットする。
 class Api::V1::Users::TweetCommentsController < Api::V1::BaseController
