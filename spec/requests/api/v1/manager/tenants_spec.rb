@@ -108,6 +108,14 @@ RSpec.describe 'Api::V1::Manager::Tenants', type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
       end
+
+      it 'メールアドレスが使われていることをエラーで返す' do
+        post '/api/v1/manager/tenants', params: valid_params, headers: auth_headers_for(manager)
+
+        errors = JSON.parse(response.body)['errors']
+        expect(errors).to include(a_string_including('すでに存在します'))
+        expect(errors).not_to include(a_string_including('不正な値です'))
+      end
     end
 
     context 'テナント名が空の場合' do

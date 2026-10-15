@@ -17,13 +17,14 @@ class Api::V1::Manager::TenantsController < Api::V1::BaseController
   # テナントと、そのテナントの最初の管理者を同時に作成する。どちらかが不正なら両方とも作成しない。
   def create
     tenant = Tenant.new(tenant_params)
-    admin = build_tenant_admin(tenant)
+    admin = build_tenant_admin
 
     errors = validation_errors(tenant, admin)
     return render json: { errors: errors }, status: :unprocessable_entity if errors.any?
 
     ActiveRecord::Base.transaction do
       tenant.save!
+      admin.tenant = tenant
       admin.save!
     end
     render json: { tenant: tenant_json(tenant), admin: admin_json(admin) }, status: :created
@@ -40,13 +41,14 @@ class Api::V1::Manager::TenantsController < Api::V1::BaseController
     params.permit(:name)
   end
 
-  def build_tenant_admin(tenant)
+  # admin を tenant に紐付けて作ると、has_many の inverse で tenant.admins にも入り、
+  # tenant.valid? が「Adminsは不正な値です」を出してしまう。tenant は保存後に紐付ける。
+  def build_tenant_admin
     admin = Admin.new(
       name: params[:admin_name],
       email: params[:admin_email],
       password: params[:admin_password],
       password_confirmation: params[:admin_password_confirmation],
-      tenant: tenant,
       proaka: Proaka.order(:id).first
     )
     # マネージャーが作成するアカウントのため、確認メールをスキップして即有効化
@@ -58,6 +60,8 @@ class Api::V1::Manager::TenantsController < Api::V1::BaseController
   def validation_errors(tenant, admin)
     tenant.valid?
     admin.valid?
+    # tenant は保存時に紐付けるため、ここでの「テナントを入力してください」は除く
+    admin.errors.delete(:tenant)
     admin.errors.add(:name, :blank) if admin.name.blank?
     tenant.errors.full_messages + admin.errors.full_messages
   end
