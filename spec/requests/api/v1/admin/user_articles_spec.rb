@@ -78,6 +78,17 @@ RSpec.describe 'Api::V1::Admin::UserArticles', type: :request do
       end
     end
 
+    context '別テナントの受講生の場合' do
+      it '404 を返す（他テナントの受講生は見えない）' do
+        other_tenant_user = create(:user)
+        create(:article, user: other_tenant_user)
+
+        get "/api/v1/admin/users/#{other_tenant_user.id}/articles", headers: admin_auth_headers(admin)
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
     context '未認証の場合' do
       it '401 を返す' do
         get "/api/v1/admin/users/#{target_user.id}/articles"
