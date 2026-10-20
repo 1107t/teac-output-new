@@ -55,6 +55,25 @@ RSpec.describe 'Api::V1 posts のテナント分離', type: :request do
     end
   end
 
+  describe 'PATCH /api/v1/admin/posts/:id' do
+    it '他テナントの投稿は 404 で、更新されない' do
+      patch "/api/v1/admin/posts/#{other_tenant_post.id}", params: { title: 'changed' },
+                                                           headers: admin_auth_headers(admin)
+
+      expect(response).to have_http_status(:not_found)
+      expect(Post.unscoped.find(other_tenant_post.id).title).not_to eq('changed')
+    end
+  end
+
+  describe 'DELETE /api/v1/admin/posts/:id' do
+    it '他テナントの投稿は 404 で、削除されない' do
+      delete "/api/v1/admin/posts/#{other_tenant_post.id}", headers: admin_auth_headers(admin)
+
+      expect(response).to have_http_status(:not_found)
+      expect(Post.unscoped.exists?(other_tenant_post.id)).to be(true)
+    end
+  end
+
   describe 'GET /api/v1/posts/:id' do
     it '他テナントの投稿は 404' do
       get "/api/v1/posts/#{other_tenant_post.id}", headers: user_auth_headers(user)
