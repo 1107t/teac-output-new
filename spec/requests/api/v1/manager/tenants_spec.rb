@@ -35,6 +35,22 @@ RSpec.describe 'Api::V1::Manager::Tenants', type: :request do
         expect(admin.name).to eq('A社管理者')
       end
 
+      it '作成した管理者は確認済み（即有効）になる' do
+        post '/api/v1/manager/tenants', params: valid_params, headers: auth_headers_for(manager)
+
+        expect(Admin.unscoped.find_by(email: 'a-admin@example.com')).to be_confirmed
+      end
+
+      it '管理者のメールアドレスは小文字で保存され、小文字でログインできる' do
+        post '/api/v1/manager/tenants', params: valid_params.merge(admin_email: 'A-Admin@Example.com'),
+                                        headers: auth_headers_for(manager)
+
+        expect(Admin.unscoped.find_by(email: 'a-admin@example.com')).to be_present
+
+        post '/api/v1/admin/auth/login', params: { email: 'a-admin@example.com', password: 'password' }
+        expect(response).to have_http_status(:ok)
+      end
+
       it '作成した管理者はメールアドレスとパスワードでログインできる' do
         post '/api/v1/manager/tenants', params: valid_params, headers: auth_headers_for(manager)
 
